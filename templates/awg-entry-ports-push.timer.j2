@@ -1,0 +1,12 @@
+# {{ ansible_managed }}
+[Unit]
+Description=AWG entry ports: push {{ awg_entry_ports_push_on_calendar }}
+
+[Timer]
+OnCalendar={{ awg_entry_ports_push_on_calendar }}
+RandomizedDelaySec={{ awg_entry_ports_push_randomized_delay }}
+Persistent=true
+Unit=awg-entry-ports@push.service
+
+[Install]
+WantedBy=timers.target

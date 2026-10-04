@@ -1,0 +1,33 @@
+---
+## AmneziaWG / WireGuard interface to inspect (`awg show <iface> ...`)
+awg_entry_ports_interface: "{{ amneziawg_interface | default('awg0') }}"
+
+## CLI used to read peers: `awg` (AmneziaWG) or `wg` (plain WireGuard)
+awg_entry_ports_wg_cli: awg
+
+## Identifier sent in every batch (the receiver maps it to its own server list)
+awg_entry_ports_server_code: "{{ inventory_hostname_short }}"
+
+## Local collection interval (systemd time span). Each run reads conntrack once.
+awg_entry_ports_collect_interval: 5min
+
+## Push target. Empty URL = collect only, push timer is not installed.
+awg_entry_ports_push_url: ""
+## Bearer token for the push endpoint (keep it in vault). Required with push_url.
+awg_entry_ports_push_token: ""
+## Push schedule (systemd OnCalendar) and jitter so hosts do not push at once
+awg_entry_ports_push_on_calendar: hourly
+awg_entry_ports_push_randomized_delay: 10min
+awg_entry_ports_push_timeout: 30
+
+## Safety cap for the local buffer (entries = peer x port pairs)
+awg_entry_ports_max_entries: 50000
+
+## Paths
+awg_entry_ports_state_dir: /var/lib/awg-entry-ports
+awg_entry_ports_script: /usr/local/sbin/awg-entry-ports
+awg_entry_ports_env_file: /etc/awg-entry-ports.env
+
+## systemd resource limits for both units
+awg_entry_ports_cpu_quota: 5%
+awg_entry_ports_memory_max: 64M

@@ -1,0 +1,22 @@
+# {{ ansible_managed }}
+[Unit]
+Description=AWG entry ports: %i
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile={{ awg_entry_ports_env_file }}
+ExecStart=/usr/bin/python3 {{ awg_entry_ports_script }} %i
+## Never compete with the tunnel
+Nice=19
+IOSchedulingClass=idle
+CPUQuota={{ awg_entry_ports_cpu_quota }}
+MemoryMax={{ awg_entry_ports_memory_max }}
+TimeoutStartSec=120
+## Hardening: needs CAP_NET_ADMIN for netlink (conntrack, awg show)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths={{ awg_entry_ports_state_dir }}
+CapabilityBoundingSet=CAP_NET_ADMIN

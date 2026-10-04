@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: Avers90
+  description: Collect which UDP entry port each AmneziaWG/WireGuard peer uses (conntrack + endpoints) and push batches to an HTTP endpoint
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions: [jammy, noble]
+    - name: Debian
+      versions: [bookworm]
+
+dependencies: []
+allow_duplicates: false

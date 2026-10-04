@@ -1,0 +1,12 @@
+# {{ ansible_managed }}
+[Unit]
+Description=AWG entry ports: collect every {{ awg_entry_ports_collect_interval }}
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec={{ awg_entry_ports_collect_interval }}
+AccuracySec=30s
+Unit=awg-entry-ports@collect.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,74 @@
+---
+- name: awg-entry-ports | Fail if distro is not supported
+  ansible.builtin.fail:
+    msg: "Distribution '{{ ansible_facts['distribution'] }}' is not supported. Supported: Debian, Ubuntu"
+  when: ansible_facts['distribution'] not in ['Debian', 'Ubuntu']
+
+- name: awg-entry-ports | Require a token when push is enabled
+  ansible.builtin.assert:
+    that:
+      - awg_entry_ports_push_url | length == 0 or awg_entry_ports_push_token | length > 0
+      - awg_entry_ports_push_url | length == 0 or awg_entry_ports_push_url is match('https://')
+    fail_msg: "awg_entry_ports_push_url needs https:// and awg_entry_ports_push_token"
+    quiet: true
+
+- name: awg-entry-ports | Install conntrack
+  ansible.builtin.apt:
+    name: conntrack
+    state: present
+    cache_valid_time: 3600
+
+- name: awg-entry-ports | Create state directory
+  ansible.builtin.file:
+    path: "{{ awg_entry_ports_state_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: awg-entry-ports | Deploy script
+  ansible.builtin.copy:
+    src: awg-entry-ports.py
+    dest: "{{ awg_entry_ports_script }}"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: awg-entry-ports | Deploy environment file
+  ansible.builtin.template:
+    src: awg-entry-ports.env.j2
+    dest: "{{ awg_entry_ports_env_file }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: awg-entry-ports | Deploy systemd units
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - awg-entry-ports@.service
+    - awg-entry-ports-collect.timer
+    - awg-entry-ports-push.timer
+  notify: Reload systemd
+
+- name: awg-entry-ports | Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: awg-entry-ports | Enable collect timer
+  ansible.builtin.systemd:
+    name: awg-entry-ports-collect.timer
+    enabled: true
+    state: started
+  ignore_errors: "{{ ansible_check_mode }}"  # unit absent on first --check
+
+- name: awg-entry-ports | Enable push timer
+  ansible.builtin.systemd:
+    name: awg-entry-ports-push.timer
+    enabled: "{{ awg_entry_ports_push_url | length > 0 }}"
+    state: "{{ 'started' if awg_entry_ports_push_url | length > 0 else 'stopped' }}"
+  ignore_errors: "{{ ansible_check_mode }}"
