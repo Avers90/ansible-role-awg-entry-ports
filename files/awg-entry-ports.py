@@ -38,6 +38,7 @@ TOKEN = os.environ.get("AWG_EP_TOKEN", "")
 TIMEOUT = int(os.environ.get("AWG_EP_TIMEOUT", "30"))
 STATE_DIR = os.environ.get("AWG_EP_STATE_DIR", "/var/lib/awg-entry-ports")
 MAX_ENTRIES = int(os.environ.get("AWG_EP_MAX_ENTRIES", "50000"))
+LOG_FILE = os.environ.get("AWG_EP_LOG_FILE", "")
 
 BUFFER = os.path.join(STATE_DIR, "buffer.json")
 LOCK = os.path.join(STATE_DIR, "lock")
@@ -45,7 +46,16 @@ KV_RE = re.compile(r"(src|dst|sport|dport)=(\S+)")
 
 
 def log(msg):
+    """stdout → journald; плюс своя строка с UTC-временем в LOG_FILE (если задан)."""
     print(msg, flush=True)
+    if not LOG_FILE:
+        return
+    try:
+        stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        with open(LOG_FILE, "a") as fh:
+            fh.write(f"{stamp} {msg}\n")
+    except OSError as exc:
+        print(f"log file {LOG_FILE}: {exc}", file=sys.stderr, flush=True)
 
 
 def run(cmd):
@@ -205,7 +215,13 @@ def main():
     os.makedirs(STATE_DIR, mode=0o700, exist_ok=True)
     with open(LOCK, "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        actions[cmd]()
+        try:
+            actions[cmd]()
+        except SystemExit:
+            raise
+        except Exception as exc:  # conntrack/awg failed etc. — leave a trace in the file too
+            log(f"{cmd}: error: {exc}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":

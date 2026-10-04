@@ -23,6 +23,11 @@ awg_entry_ports_push_timeout: 30
 ## Safety cap for the local buffer (entries = peer x port pairs)
 awg_entry_ports_max_entries: 50000
 
+## Own log file (in addition to journald, which rotates by size together with
+## everything else). Empty dir = journald only. Rotated weekly, N weeks kept.
+awg_entry_ports_log_dir: /var/log/awg-entry-ports
+awg_entry_ports_log_rotate_weeks: 8
+
 ## Paths
 awg_entry_ports_state_dir: /var/lib/awg-entry-ports
 awg_entry_ports_script: /usr/local/sbin/awg-entry-ports

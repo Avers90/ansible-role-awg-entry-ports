@@ -1,0 +1,11 @@
+# {{ ansible_managed }}
+## The script opens the file per run (append), no copytruncate/postrotate needed.
+{{ awg_entry_ports_log_dir }}/*.log {
+    weekly
+    rotate {{ awg_entry_ports_log_rotate_weeks }}
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 root adm
+}

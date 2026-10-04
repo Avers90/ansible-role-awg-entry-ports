@@ -34,6 +34,18 @@ buffer; the next push sends everything. The buffer is bounded by peers × ports.
 
 Without `awg_entry_ports_push_url` only collection runs (push timer disabled).
 
+Every run writes one line to journald and to
+`/var/log/awg-entry-ports/awg-entry-ports.log` (UTC timestamp, rotated weekly).
+journald on busy hosts rotates by size together with everything else, so the
+file gives a predictable history. Errors (conntrack / awg failed, HTTP errors)
+land there too:
+
+```
+2026-10-04T12:05:09Z collect: listen=51820 matched=20 by_port={51820: 19, 27015: 1} buffer=22
+2026-10-04T13:04:41Z push: HTTP 200, sent 22 entries
+2026-10-04T14:07:12Z push: HTTP 500, buffer kept (25 entries)
+```
+
 ## Requirements
 
 - Debian / Ubuntu, `python3` (stdlib only)
@@ -56,6 +68,8 @@ Without `awg_entry_ports_push_url` only collection runs (push timer disabled).
 | `awg_entry_ports_push_timeout` | `30` | HTTP timeout, seconds |
 | `awg_entry_ports_max_entries` | `50000` | Buffer cap (peer × port pairs) |
 | `awg_entry_ports_cpu_quota` / `_memory_max` | `5%` / `64M` | systemd limits |
+| `awg_entry_ports_log_dir` | `/var/log/awg-entry-ports` | Own log file (UTC timestamps), empty = journald only |
+| `awg_entry_ports_log_rotate_weeks` | `8` | logrotate: weekly, N kept |
 
 ## Push format
 
@@ -95,6 +109,7 @@ sudo awg-entry-ports show      # current matches, buffer untouched (needs env: s
 sudo systemctl start awg-entry-ports@collect.service && journalctl -u awg-entry-ports@collect -n 3
 sudo systemctl start awg-entry-ports@push.service    && journalctl -u awg-entry-ports@push -n 3
 sudo sh -c 'set -a; . /etc/awg-entry-ports.env; awg-entry-ports status'
+sudo tail -n 20 /var/log/awg-entry-ports/awg-entry-ports.log
 ```
 
 `show`/`status` read the interface from `/etc/awg-entry-ports.env`; run them

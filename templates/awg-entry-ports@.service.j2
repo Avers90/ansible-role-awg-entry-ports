@@ -18,5 +18,5 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
-ReadWritePaths={{ awg_entry_ports_state_dir }}
+ReadWritePaths={{ ([awg_entry_ports_state_dir, awg_entry_ports_log_dir] | select | join(' ')) }}
 CapabilityBoundingSet=CAP_NET_ADMIN
